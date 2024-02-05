@@ -1,35 +1,33 @@
-import { useEffect, useState } from 'react';
-import reactLogo from './assets/react.svg';
-import viteLogo from '/vite.svg';
+// import React from 'react';
+import { SignUpForm } from './Signup';
+import { UserPage } from './Userpage';
 import './App.css';
+import { useState } from 'react';
+
+interface User {
+  username: string;
+}
 
 export default function App() {
-  const [serverData, setServerData] = useState('');
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [username, setUsername] = useState<string>('');
 
-  useEffect(() => {
-    async function readServerData() {
-      const resp = await fetch('/api/hello');
-      const data = await resp.json();
-
-      console.log('Data from server:', data);
-
-      setServerData(data.message);
+  const handleLogin = (user: User) => {
+    if (user) {
+      setUsername(user.username);
+      setLoggedIn(true);
+    } else {
+      console.log('invalid user object:', user);
     }
-
-    readServerData();
-  }, []);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank" rel="noreferrer">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank" rel="noreferrer">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>{serverData}</h1>
-    </>
+    <div>
+      {loggedIn ? (
+        <UserPage username={username} />
+      ) : (
+        <SignUpForm onLogin={handleLogin} />
+      )}
+    </div>
   );
 }
