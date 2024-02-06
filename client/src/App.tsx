@@ -3,6 +3,7 @@ import { SignUpForm } from './Signup';
 import { UserPage } from './Userpage';
 import './App.css';
 import { useState } from 'react';
+import { TaskPage } from './Taskpage';
 
 interface User {
   username: string;
@@ -11,6 +12,7 @@ interface User {
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [username, setUsername] = useState<string>('');
+  const [selectedTask, setSelectedTask] = useState<number | null>(null);
 
   const handleLogin = (user: User) => {
     if (user) {
@@ -21,10 +23,19 @@ export default function App() {
     }
   };
 
+  const handleTaskClick = (taskId: number) => {
+    console.log('task clicked:', taskId);
+    setSelectedTask(taskId);
+  };
+
   return (
     <div>
       {loggedIn ? (
-        <UserPage username={username} />
+        selectedTask != null ? (
+          <UserPage username={username} selectedTask={selectedTask} />
+        ) : (
+          <TaskPage onTaskClick={handleTaskClick} />
+        )
       ) : (
         <SignUpForm onLogin={handleLogin} />
       )}
