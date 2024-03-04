@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars -- Remove when used */
 import 'dotenv/config';
-import express from 'express';
+import express, { application } from 'express';
 import pg from 'pg';
 import {
   ClientError,
@@ -107,6 +107,46 @@ app.post('/api/auth/sign-in', async (req, res, next) => {
     const payload = { userId, username: userUsername };
     const token = jwt.sign(payload, hashKey);
     res.json({ token, user: payload });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/api/tasks', async (req, res, next) => {
+  try {
+    const { taskContent, priority, assignedUserId } = req.body;
+
+    const sql = `
+    insert into "tasks" ("taskContent", "priority")
+    values ($1, $2)
+    returning *
+    `;
+    const params = [taskContent, priority];
+    const result = await db.query(sql, params);
+    const [newTask] = result.rows;
+
+    res.status(201).json(newTask);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/tasks/:taskId', async (req, res, next) => {
+  try {
+    const taskId = parseInt(req.params.taskId, 10);
+    const sql = `
+    select "taskId", "taskContent", "priority"
+    from "tasks"
+    where "taskId" = $1
+    `;
+    const params = [taskId];
+    const result = await db.query(sql, params);
+    const [taskDetails] = result.rows;
+
+    if (!taskDetails) {
+      throw new ClientError(404, 'Task not found');
+    }
+    res.json(taskDetails);
   } catch (error) {
     next(error);
   }

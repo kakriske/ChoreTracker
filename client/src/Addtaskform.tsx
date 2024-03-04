@@ -9,15 +9,32 @@ export function AddTaskForm({ onAddTask }: AddTaskFormProps) {
   const [taskContent, setTaskContent] = useState('');
   const [priority, setPriority] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const newTask = {
-      taskContent,
-      priority,
-    };
+    try {
+      const req = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskContent, priority }),
+      };
+      const res = await fetch('/api/tasks', req);
 
-    onAddTask(newTask);
+      if (!res.ok) {
+        throw new Error(`fetch Error ${res.status}`);
+      }
+      const newTask = await res.json();
+      onAddTask(newTask);
+    } catch (err) {
+      console.error(`Error adding task: ${err}`);
+    }
+
+    // const newTask = {
+    //   taskContent,
+    //   priority,
+    // };
+
+    // onAddTask(newTask);
 
     // clear out input
     setTaskContent('');

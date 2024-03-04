@@ -15,6 +15,11 @@ export function authMiddleware(
   if (!token) {
     throw new ClientError(401, 'authentication required');
   }
-  req.user = jwt.verify(token, secret) as Request['user'];
-  next();
+
+  try {
+    req.user = jwt.verify(token, secret) as { userId: number };
+    next();
+  } catch (error) {
+    throw new ClientError(401, 'invalid token');
+  }
 }
