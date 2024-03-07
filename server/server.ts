@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars -- Remove when used */
 import 'dotenv/config';
 import express, { application } from 'express';
-import pg from 'pg';
+import pg, { Client } from 'pg';
 import {
   ClientError,
   defaultMiddleware,
+  authMiddleware,
   errorMiddleware,
 } from './lib/index.js';
 // import { argon2d } from "argon2";
@@ -79,6 +80,7 @@ app.post('/api/auth/sign-up', async (req, res, next) => {
 app.post('/api/auth/sign-in', async (req, res, next) => {
   try {
     const { username, password } = req.body as Partial<Auth>;
+    console.log('username received:', username);
     if (!username || !password) {
       throw new ClientError(401, 'invalid login');
     }
@@ -104,26 +106,44 @@ app.post('/api/auth/sign-in', async (req, res, next) => {
     if (!(await argon2.verify(hashedPasswordFromDB, password))) {
       throw new ClientError(401, 'invalid login');
     }
+
+    const sqlTasks = `
+    select "taskId", "taskContent", "priority"
+    from "tasks"
+    where "assignedUserId" = $1
+    `;
+
+    const tasksResult = await db.query(sqlTasks, [userId]);
+    const tasks = tasksResult.rows;
+
     const payload = { userId, username: userUsername };
     const token = jwt.sign(payload, hashKey);
+    console.log('generated token:', token);
     res.json({ token, user: payload });
   } catch (error) {
     next(error);
   }
 });
 
-app.post('/api/tasks', async (req, res, next) => {
+app.post('/api/tasks', authMiddleware, async (req, res, next) => {
   try {
-    const { taskContent, priority, assignedUserId } = req.body;
+    const { taskContent, priority } = req.body;
+    const assignedUserId = req.user?.userId;
+    console.log('request body:', req.body);
+    console.log('task details:', { taskContent, priority, assignedUserId });
 
     const sql = `
-    insert into "tasks" ("taskContent", "priority")
-    values ($1, $2)
+    insert into "tasks" ("taskContent", "priority", "assignedUserId")
+    values ($1, $2, $3)
     returning *
     `;
-    const params = [taskContent, priority];
+    const params = [taskContent, priority, assignedUserId];
+    console.log('SQL query:', sql);
+    console.log('SQL parameters:', params);
     const result = await db.query(sql, params);
     const [newTask] = result.rows;
+
+    console.log('new task', newTask);
 
     res.status(201).json(newTask);
   } catch (error) {
@@ -131,22 +151,22 @@ app.post('/api/tasks', async (req, res, next) => {
   }
 });
 
-app.get('/api/tasks/:taskId', async (req, res, next) => {
-  try {
-    const taskId = parseInt(req.params.taskId, 10);
-    const sql = `
-    select "taskId", "taskContent", "priority"
-    from "tasks"
-    where "taskId" = $1
-    `;
-    const params = [taskId];
-    const result = await db.query(sql, params);
-    const [taskDetails] = result.rows;
+app.get('/api/tasks/:taskId', authMiddleware, async (req, res, next) => {
+  const userId = req.user?.userId;
+  const { taskId } = req.params;
 
-    if (!taskDetails) {
+  try {
+    const sql = `SELECT * FROM "tasks" WHERE "taskId" = $1 AND "assignedUserId" = $2`;
+    const params = [taskId, userId];
+    const result = await db.query(sql, params);
+    if (!userId) {
+      throw new ClientError(401, 'Unauthorized: no userId');
+    }
+
+    if (result.rows.length === 0) {
       throw new ClientError(404, 'Task not found');
     }
-    res.json(taskDetails);
+    res.json(result.rows[0]);
   } catch (error) {
     next(error);
   }

@@ -21,21 +21,32 @@ export function SignUpForm({ onLogin }: SignUpFormProps) {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setIsLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const userData = Object.fromEntries(formData.entries());
+    console.log('login data:', userData);
+
     try {
-      setIsLoading(true);
-      const formData = new FormData(e.currentTarget);
-      const userData = Object.fromEntries(formData.entries());
-      const req = {
+      const response = await fetch('api/auth/sign-up', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(userData),
-      };
-      const res = await fetch('api/auth/sign-up', req);
-      if (!res.ok) {
-        throw new Error(`fetch Error ${res.status}`);
+      });
+
+      if (!response.ok) {
+        throw new Error(`fetch Error ${response.statusText}`);
       }
-      const user = await res.json();
-      onLogin(user);
+      const data = await response.json();
+      console.log('Login success:', data);
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        console.log('token stored:');
+        onLogin(data);
+      } else {
+        console.error('no token found with response');
+      }
     } catch (err) {
       alert(`Error registering user: ${err}`);
     } finally {
@@ -45,32 +56,35 @@ export function SignUpForm({ onLogin }: SignUpFormProps) {
 
   async function handleLoginSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    console.log('login submitted');
+    setIsLoading(true);
+
+    const formData = new FormData(e.currentTarget);
+    const userData = Object.fromEntries(formData.entries());
     try {
-      setIsLoading(true);
-      const formData = new FormData(e.currentTarget);
-      const userData = Object.fromEntries(formData.entries());
-      console.log('login data', userData);
-      const req = {
+      const response = await fetch('api/auth/sign-in', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
-      };
-      const res = await fetch('api/auth/sign-in', req);
-      console.log('API response:', res.status, res.statusText);
+      });
 
-      if (!res.ok) {
-        throw new Error(`fetch Error ${res.status}`);
+      if (!response.ok) {
+        throw new Error(`Fetch error: ${response.statusText}`);
       }
-      const { user } = await res.json();
-      console.log(user);
-      const username = user.username;
-      console.log('you are in!:', username);
-      console.log('Logged in', user);
-      onLogin(user);
-      handleCloseLoginModal();
-    } catch (err) {
-      alert(`Error logging: ${err}`);
+
+      const { token, user } = await response.json();
+      if (token) {
+        localStorage.setItem('token', token);
+        console.log('token stored');
+        onLogin(user);
+        handleCloseLoginModal();
+      } else {
+        console.error('no token found in response');
+      }
+    } catch (error: unknown) {
+      const errorMessage =
+        (error as Error).message || 'An unknown error occurred';
+      console.error('Error logging in:', errorMessage);
+      alert(`Error logging in: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }
