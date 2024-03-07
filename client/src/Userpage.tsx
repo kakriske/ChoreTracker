@@ -10,7 +10,6 @@ interface UserPageProps {
 export function UserPage({
   username,
   selectedTask,
-  onNavigateBack,
   onNavigateBackToTaskPage,
 }: UserPageProps) {
   const [selectedTaskInfo, setSelectedTaskInfo] = useState<any | null>(null);
@@ -50,7 +49,6 @@ export function UserPage({
       ) : (
         <p>No task selected</p>
       )}
-      <button onClick={onNavigateBack}>Go Back</button>
       <button onClick={onNavigateBackToTaskPage}>Go to Task Page</button>
     </div>
   );
