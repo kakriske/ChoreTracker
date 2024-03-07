@@ -1,6 +1,32 @@
-# final-project
+# ChoreTracker
 
-A full stack TypeScript solo project.
+A full stack React and TypeScript application for roommates that want to plan household tasks.
+
+# Why I Built This
+
+I wanted a place to track household tasks.
+
+# Live Demo
+
+# Technoligies Used
+
+- React.js
+- TypeScript
+- Node.js
+- Express
+- HTML
+- CSS
+- AWS
+
+# Features
+
+- User can create an account.
+- User can add tasks to a main page.
+- User can select tasks from main page and add to their page.
+- User can prioritize tasks on own page.
+- User can delete tasks from their page.
+
+# Preview
 
 ## Getting Started
 
