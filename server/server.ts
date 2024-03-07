@@ -49,12 +49,6 @@ app.use(express.static(reactStaticDir));
 app.use(express.static(uploadsStaticDir));
 app.use(express.json());
 
-// app.get('/api/hello', (req, res) => {
-//   res.json({ message: 'Hello, World!' });
-// });
-
-app.use(express.json());
-
 app.post('/api/auth/sign-up', async (req, res, next) => {
   try {
     const { username, password } = req.body as Partial<Auth>;
