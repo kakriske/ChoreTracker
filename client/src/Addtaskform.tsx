@@ -11,11 +11,15 @@ export function AddTaskForm({ onAddTask }: AddTaskFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const token = localStorage.getItem('token');
 
     try {
       const req = {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ taskContent, priority }),
       };
       const res = await fetch('/api/tasks', req);

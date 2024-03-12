@@ -1,5 +1,5 @@
 // import React from "react";
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AddTaskForm } from './Addtaskform';
 // import { AddTaskForm } from "./Addtaskform";
 
@@ -14,6 +14,32 @@ export function TaskPage({ onTaskClick }: TaskpageProps) {
     setTasks((prevTasks) => [...prevTasks, newTask]);
   };
 
+  //UseEffect with a fetch request and authorization header the bearer from authmiddleware and the token
+  useEffect(() => {
+    const fetchTasks = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('Token not found');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/tasks', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) {
+          throw new Error(`Error fetching tasks: ${response.statusText}`);
+        }
+        const tasks = await response.json();
+        setTasks(tasks);
+      } catch (error) {
+        console.error('Failed to fetch tasks:', error);
+      }
+    };
+    fetchTasks();
+  }, []);
   const handleTaskClick = (taskId: number) => {
     console.log('Task clicked with taskId:', taskId);
     const selectedTask = tasks.find((task) => task.taskId === taskId);

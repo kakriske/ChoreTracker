@@ -12,13 +12,37 @@ interface User {
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [username, setUsername] = useState<string>('');
-  const [selectedTask, setSelectedTask] = useState<number | null>(null);
+  const [selectedTasks, setSelectedTasks] = useState<number[]>([]);
   const [currentPage, setCurrentPage] = useState<'task' | 'user'>('task');
 
-  const handleLogin = (user: User) => {
+  const checkUserTasks = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/tasks`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch tasks');
+      }
+      const tasks = await response.json();
+      if (tasks.length > 0) {
+        setSelectedTasks(tasks.map((task) => task.taskId));
+        setCurrentPage('user');
+      } else {
+        setCurrentPage('task');
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleLogin = async (user: User) => {
     if (user) {
       setUsername(user.username);
       setLoggedIn(true);
+      await checkUserTasks();
     } else {
       console.log('invalid user object:', user);
     }
@@ -26,13 +50,15 @@ export default function App() {
 
   const handleTaskClick = (taskId: number) => {
     console.log('task clicked in app:', taskId);
-    setSelectedTask(taskId);
+    if (!selectedTasks.includes(taskId)) {
+      setSelectedTasks([...selectedTasks, taskId]);
+    }
     setCurrentPage('user');
   };
 
   const handleNavigateBack = () => {
     setCurrentPage('task');
-    setSelectedTask(null);
+    setSelectedTasks([]);
   };
 
   const handleNavigateToTaskPage = () => {
@@ -47,7 +73,7 @@ export default function App() {
         ) : (
           <UserPage
             username={username}
-            selectedTask={selectedTask}
+            selectedTasks={selectedTasks}
             onNavigateBack={handleNavigateBack}
             onNavigateBackToTaskPage={handleNavigateToTaskPage}
           />
