@@ -4,6 +4,7 @@ import express, { application } from 'express';
 import pg from 'pg';
 import {
   ClientError,
+  authMiddleware,
   defaultMiddleware,
   errorMiddleware,
 } from './lib/index.js';
@@ -106,16 +107,17 @@ app.post('/api/auth/sign-in', async (req, res, next) => {
   }
 });
 
-app.post('/api/tasks', async (req, res, next) => {
+app.post('/api/tasks', authMiddleware, async (req, res, next) => {
   try {
-    const { taskContent, priority, assignedUserId } = req.body;
+    const { taskContent, priority } = req.body;
+    const assignedUserId = req.user?.userId;
 
     const sql = `
-    insert into "tasks" ("taskContent", "priority")
-    values ($1, $2)
+    insert into "tasks" ("taskContent", "priority", "assignedUserId")
+    values ($1, $2, $3)
     returning *
     `;
-    const params = [taskContent, priority];
+    const params = [taskContent, priority, assignedUserId];
     const result = await db.query(sql, params);
     const [newTask] = result.rows;
 
@@ -125,6 +127,41 @@ app.post('/api/tasks', async (req, res, next) => {
   }
 });
 
+app.post('/api/tasks/batch', authMiddleware, async (req, res, next) => {
+  try {
+    const { taskIds } = req.body;
+    if (!taskIds || !Array.isArray(taskIds) || taskIds.length === 0) {
+      throw new ClientError(400, 'taskIDs must be non-empty arrays');
+    }
+    const sql = `
+    select * from tasks
+    where "taskId" = ANY($1)
+    and "assignedUserId" = $2
+    `;
+    const userId = req.user?.userId;
+    const params = [taskIds, userId];
+    const result = await db.query(sql, params);
+    res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// make an endpoint for collecting all tasks with the second argument being authmiddleware
+
+app.get('/api/tasks', authMiddleware, async (req, res, next) => {
+  try {
+    const userId = req.user?.userId;
+    const sql = `
+    select * from tasks where "assignedUserId" = $1
+    `;
+    const params = [userId];
+    const result = await db.query(sql, params);
+    res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+});
 app.get('/api/tasks/:taskId', async (req, res, next) => {
   try {
     const taskId = parseInt(req.params.taskId, 10);

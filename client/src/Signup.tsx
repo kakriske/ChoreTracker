@@ -21,10 +21,11 @@ export function SignUpForm({ onLogin }: SignUpFormProps) {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setIsLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const userData = Object.fromEntries(formData.entries());
+
     try {
-      setIsLoading(true);
-      const formData = new FormData(e.currentTarget);
-      const userData = Object.fromEntries(formData.entries());
       const req = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -32,7 +33,7 @@ export function SignUpForm({ onLogin }: SignUpFormProps) {
       };
       const res = await fetch('api/auth/sign-up', req);
       if (!res.ok) {
-        throw new Error(`fetch Error ${res.status}`);
+        throw new Error(`fetch Error ${res.statusText}`);
       }
       const user = await res.json();
       onLogin(user);
@@ -62,8 +63,13 @@ export function SignUpForm({ onLogin }: SignUpFormProps) {
       if (!res.ok) {
         throw new Error(`fetch Error ${res.status}`);
       }
-      const { user } = await res.json();
-      console.log(user);
+      const { token, user } = await res.json();
+      console.log(token);
+      localStorage.setItem('token', token);
+      console.log('token:', token);
+      console.log('user:', user);
+      // localStorage.setItem('user', JSON.stringify(user));
+      //store in local storage here
       const username = user.username;
       console.log('you are in!:', username);
       console.log('Logged in', user);
