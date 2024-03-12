@@ -127,6 +127,26 @@ app.post('/api/tasks', authMiddleware, async (req, res, next) => {
   }
 });
 
+app.post('/api/tasks/batch', authMiddleware, async (req, res, next) => {
+  try {
+    const { taskIds } = req.body;
+    if (!taskIds || !Array.isArray(taskIds) || taskIds.length === 0) {
+      throw new ClientError(400, 'taskIDs must be non-empty arrays');
+    }
+    const sql = `
+    select * from tasks
+    where "taskId" = ANY($1)
+    and "assignedUserId" = $2
+    `;
+    const userId = req.user?.userId;
+    const params = [taskIds, userId];
+    const result = await db.query(sql, params);
+    res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // make an endpoint for collecting all tasks with the second argument being authmiddleware
 
 app.get('/api/tasks', authMiddleware, async (req, res, next) => {

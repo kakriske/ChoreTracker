@@ -18,10 +18,13 @@ export function UserPage({
     const fetchTaskDetails = async () => {
       const token = localStorage.getItem('token');
       try {
-        const response = await fetch(`/api/tasks/${selectedTasks}`, {
+        const response = await fetch(`/api/tasks/batch`, {
+          method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
+          body: JSON.stringify({ taskIds: selectedTasks }),
         });
         if (!response.ok) {
           throw new Error(`Error fetching task details: ${response.status}`);
@@ -43,7 +46,23 @@ export function UserPage({
       <div className="chore-tracker-section border border-dark shadow mb-3 pb-2 bg-warning text-dark">
         <h1 className="d-block">Welcome, now get to work {username}!</h1>
       </div>
-      {selectedTasks != null && selectedTaskInfo ? (
+      {selectedTaskInfo && selectedTaskInfo.length > 0 ? (
+        <div>
+          <h2>Your Task List</h2>
+          <ul>
+            {selectedTaskInfo.map((task: any, index: number) => (
+              <li
+                key={
+                  index
+                }>{`Task ID: ${task.taskId}, Task Content: ${task.taskContent}`}</li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p>No task selected</p>
+      )}
+
+      {/* {selectedTasks != null && selectedTaskInfo ? (
         <div>
           <h2>Your Task List</h2>
           <p>{`Task ID: ${selectedTasks}`}</p>
@@ -53,7 +72,7 @@ export function UserPage({
         </div>
       ) : (
         <p>No task selected</p>
-      )}
+      )} */}
       <button onClick={onNavigateBackToTaskPage}>Go to Task Page</button>
     </div>
   );

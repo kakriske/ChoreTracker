@@ -69,7 +69,10 @@ export default function App() {
     <div>
       {loggedIn ? (
         currentPage === 'task' ? (
-          <TaskPage onTaskClick={handleTaskClick} />
+          <TaskPage
+            onTaskClick={handleTaskClick}
+            selectedTasks={selectedTasks}
+          />
         ) : (
           <UserPage
             username={username}

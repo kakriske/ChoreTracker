@@ -5,9 +5,10 @@ import { AddTaskForm } from './Addtaskform';
 
 interface TaskpageProps {
   onTaskClick: (taskId: number, taskContent: string) => void;
+  selectedTasks: number[];
 }
 
-export function TaskPage({ onTaskClick }: TaskpageProps) {
+export function TaskPage({ onTaskClick, selectedTasks }: TaskpageProps) {
   const [tasks, setTasks] = useState<any[]>([]);
 
   const handleAddTask = (newTask: any) => {
@@ -59,11 +60,15 @@ export function TaskPage({ onTaskClick }: TaskpageProps) {
         <h2>Task List</h2>
         <AddTaskForm onAddTask={handleAddTask} />
         <ul>
-          {tasks.map((task) => (
-            <li key={task.taskId} onClick={() => handleTaskClick(task.taskId)}>
-              {task.taskContent}
-            </li>
-          ))}
+          {tasks
+            .filter((task) => !selectedTasks.includes(task.taskId))
+            .map((task) => (
+              <li
+                key={task.taskId}
+                onClick={() => handleTaskClick(task.taskId)}>
+                {task.taskContent}
+              </li>
+            ))}
         </ul>
       </div>
     </div>
